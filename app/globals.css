@@ -1,0 +1,443 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ========= THEME ========= */
+:root{
+  --bg:#0b1220;
+  --surface:#0f172a;
+  --surface-2:#111827;
+  --border:#1f2937;
+  --text:#e5edf7;
+  --muted:#9fb1c9;
+  --primary:#3b82f6;
+  --primary-600:#2563eb;
+  --primary-700:#1e40af;
+  --warn:#f59e0b;
+  --toolbar-h:64px;      /* пробивається із Board.tsx */
+}
+
+/* базові */
+html,body{height:100%;margin:0;background:var(--bg);color:var(--text)}
+body{overflow:hidden} /* скролимо/жестимо тільки в межах дошки */
+
+/* утилка */
+.full-bleed{width:100vw;margin-left:calc(50% - 50vw);margin-right:calc(50% - 50vw)}
+
+/* ========= BUTTONS ========= */
+button,.btn{
+  background-color:#2563eb;color:#fff;padding:10px 18px;border:none;border-radius:8px;
+  cursor:pointer;font-size:14px;font-weight:500;transition:background-color .3s,transform .2s
+}
+button:hover,.btn:hover{background-color:#1d4ed8;transform:scale(1.05)}
+button:active,.btn:active{transform:scale(.97)}
+button:disabled,.btn:disabled{background-color:#9ca3af;cursor:not-allowed}
+
+.btn{appearance:none;border:1px solid transparent;border-radius:10px;padding:8px 14px;font-weight:700;background:var(--surface);border-color:var(--border)}
+.btn:hover{transform:translateY(-1px)}
+.btn.primary{background:var(--primary);border-color:var(--primary-700)}
+.btn.primary:hover{background:var(--primary-600)}
+.btn.ghost{background:var(--surface-2);border-color:var(--border);color:#dbeafe}
+.btn.ghost:hover{background:#16233a}
+.btn.default{background:#1e293b;border-color:#334155}
+.btn.warn{background:var(--warn);color:#1b1403;border-color:#b45309}
+.w100{width:100%}
+
+/* старі класи тулбара */
+.board-btn{@apply px-3 py-1 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition}
+.board-btn-ghost{@apply px-3 py-1 rounded-lg bg-slate-700 text-white hover:bg-slate-600 transition}
+.board-btn.danger{background:#7f1d1d;border:1px solid #b91c1c}
+.board-btn.danger:hover{background:#b91c1c}
+
+/* ========= BOARD LAYOUT ========= */
+/* сторінка = весь екран, панель зверху, дошка заповнює решту */
+.board-page{height:100vh;display:flex;flex-direction:column;background:var(--bg)}
+
+/* верхня панель: sticky + перенос кнопок у 2 рядки */
+.board-toolbar-wrap{
+  position:sticky;top:0;z-index:60;
+  display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:flex-start;
+  padding:10px; background:var(--bg); border-bottom:1px solid var(--border)
+}
+
+/* контейнер під панеллю */
+.board-content{flex:1;min-height:0;display:flex;padding:0}
+
+/* в’юпорт дошки — займає всю ширину/висоту під панеллю */
+.board-viewport{
+  flex:1;min-height:0;width:100%;height:100%;
+  background:var(--bg);
+  overflow:hidden;                     /* скрол/інерція не «прокидаються» в body */
+  overscroll-behavior:contain;
+  touch-action:none !important;        /* жести тільки тут */
+  border-top:1px solid var(--border)
+}
+
+/* поверхня дошки та RZPP-обгортки — дозволяємо жести */
+.board-surface{position:relative;background:var(--bg);touch-action:none}
+.react-transform-wrapper,.react-transform-component{touch-action:none !important}
+
+/* внутрішній тулбар (оформлення) */
+.board-toolbar{display:flex;gap:.5rem;padding:.5rem .75rem;background:linear-gradient(180deg,#0f172a,#0b1220)}
+
+/* ========= AUTH ========= */
+.auth-form{display:flex;flex-direction:column;gap:12px;padding:20px;background:#111827;border-radius:12px}
+.auth-form input{padding:10px;border-radius:6px;border:1px solid #374151;background:#1f2937;color:#fff}
+.auth-form button,.auth-form .btn{width:100%}
+
+/* ========= MODALS ========= */
+.modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center;z-index:60}
+.modal{width:min(720px,90vw);max-height:90vh;background:#0f172a;color:#e2e8f0;border:1px solid #334155;border-radius:16px;box-shadow:0 10px 40px rgba(0,0,0,.5);display:flex;flex-direction:column}
+.modal-header{padding:16px 20px;border-bottom:1px solid #334155}
+.modal-body{padding:16px 20px;overflow:auto}
+.modal-footer{padding:12px 20px;border-top:1px solid #334155;display:flex;gap:12px;justify-content:flex-end}
+
+/* ========= FORMS / TAGS / SWATCHES ========= */
+.form-grid{display:grid;grid-template-columns:160px 1fr;gap:10px 14px;align-items:center}
+.form-grid input,.form-grid textarea{background:#0b1220;border:1px solid #334155;border-radius:10px;padding:8px 10px;color:#e2e8f0}
+.form-grid textarea{min-height:72px;resize:vertical}
+
+.pill-list{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.pill{border:1px solid #334155;border-radius:999px;padding:6px 10px;background:#0b1220;cursor:pointer}
+.pill-active{outline:2px solid #64748b}
+.pill-plus{font-weight:700}
+.new-pill-input{min-width:120px}
+
+.filter-list{display:flex;flex-wrap:wrap;gap:10px;margin-top:4px}
+.filter-item{display:flex;gap:6px;align-items:center;padding:4px 8px;border:1px dashed #334155;border-radius:8px}
+.filter-add{display:flex;gap:8px;align-items:center}
+
+.toggle{display:flex;align-items:center;gap:8px}
+.toggle-on,.toggle-off{display:inline-block;padding:6px 10px;border-radius:999px;border:1px solid #334155}
+.toggle-on{background:#14532d}
+
+/* sovany виділення */
+.dog-chip-sovany{outline:2px solid #ef4444;box-shadow:0 0 0 2px #ef4444 inset}
+
+/* swatches */
+.swatch-list{display:flex;flex-wrap:wrap;gap:10px;align-items:center;position:relative}
+.swatch{width:28px;height:28px;border-radius:999px;border:2px solid #334155;box-shadow:0 1px 2px rgba(0,0,0,.35);cursor:pointer;display:inline-flex;align-items:center;justify-content:center}
+.swatch-selected{outline:2px solid #60a5fa;outline-offset:2px}
+.swatch-plus{background:#0b1220;color:#e2e8f0;font-weight:700;font-size:16px}
+.color-popover{position:absolute;z-index:70;top:100%;left:0;margin-top:8px;background:#0f172a;border:1px solid #334155;border-radius:12px;padding:10px;display:flex;gap:10px;align-items:center;box-shadow:0 10px 30px rgba(0,0,0,.45)}
+
+/* tags */
+.tag{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:999px;border:1px solid #334155;background:#0b1220;cursor:pointer}
+.tag input{display:none}
+.tag-active{outline:2px solid #64748b}
+
+/* details */
+.details-grid{display:grid;grid-template-columns:140px 1fr;gap:10px 14px;align-items:flex-start}
+.details-grid .dt{color:#93a3b8;font-size:12px;padding-top:6px}
+.details-grid .dd{color:#e2e8f0}
+.badge{display:inline-block;padding:4px 8px;border-radius:999px;background:#0b1220;border:1px solid #334155;font-size:12px}
+.badge-red{background:rgba(239,68,68,.15);border-color:#ef4444}
+.tag-static{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:999px;border:1px solid #334155;background:#0b1220}
+.code-chip{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,"Courier New",monospace;font-size:12px;padding:2px 6px;border-radius:6px;background:#0b1220;border:1px solid #334155}
+.swatch-static{width:20px;height:20px;border-radius:999px;border:2px solid #334155;box-shadow:0 1px 2px rgba(0,0,0,.35)}
+
+/* ========= DOG NAME FX ========= */
+.dog-name{font-weight:700;letter-spacing:.5px;text-shadow:0 1px 1px rgba(0,0,0,.6),0 0 6px rgba(59,130,246,.35);transition:text-shadow .25s,transform .25s}
+.dog-chip:hover .dog-name{transform:scale(1.05);text-shadow:0 2px 2px rgba(0,0,0,.7),0 0 10px rgba(59,130,246,.55)}
+
+/* ========= PRINT ========= */
+.print-modal{width:min(980px,95vw)}
+.print-a4{width:210mm;min-height:297mm;background:#fff;color:#0b1220;padding:12mm;border-radius:6px;border:1px solid #e5e7eb;overflow:auto}
+.print-table{width:100%;border-collapse:collapse;table-layout:fixed}
+.print-table th,.print-table td{border:1px solid #cbd5e1;padding:6px 8px;vertical-align:middle;word-wrap:break-word}
+.print-table th{background:#f1f5f9;font-weight:600}
+.fit-name{display:block;font-size:clamp(10px,2vw,16px)}
+@media print{
+  .modal-backdrop{position:static;background:none}
+  .modal{box-shadow:none;border:none}
+  .no-print,.board-toolbar-wrap{display:none !important}
+  .print-a4{width:auto;min-height:auto;border:none;padding:0}
+}
+/* === Mobile app-like layout (append-only) === */
+
+/* 1) сторінка = повна висота екрана, скрол сторінки вимкнено */
+html, body { height: 100%; }
+body { overflow: hidden; background: var(--bg); }
+
+/* краще поводиться на мобі: висота вікна без адресної панелі */
+.board-page {
+  height: 100vh;
+  height: 100dvh; /* нові браузери */
+  display: flex;
+  flex-direction: column;
+}
+
+/* 2) верхня панель: sticky + перенос кнопок у 2 рядки, повна ширина */
+.board-toolbar-wrap {
+  position: sticky;
+  top: 0;
+  z-index: 60;
+  width: 100%;
+  background: var(--bg);
+  border-bottom: 1px solid var(--border);
+  padding: 10px 12px;
+  display: flex;
+  flex-wrap: wrap;          /* ← перенос у 2 ряд */
+  gap: 8px;
+  align-items: center;
+}
+
+/* сам контейнер кнопок дозволяємо ламатись у рядки */
+.board-toolbar {
+  display: flex;
+  flex-wrap: wrap;          /* ← перенос */
+  gap: 8px;
+  width: 100%;
+}
+
+/* 3) область під панеллю — все, що залишилось по висоті */
+.board-content {
+  flex: 1;
+  min-height: 0;            /* критично! */
+  display: flex;
+}
+
+/* 4) в’юпорт дошки — на всю ширину/висоту під панеллю, без “білих морів” */
+.board-viewport {
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;                 /* сторінка не скролиться */
+  overscroll-behavior: contain;     /* не прокидаємо скрол у body */
+  touch-action: none !important;    /* жести лише тут */
+  background: var(--bg);
+}
+
+/* 5) жести на всіх шарах RZPP + поверхні */
+.react-transform-wrapper,
+.react-transform-component,
+.board-surface { touch-action: none !important; }
+.board-surface { position: relative; background: var(--bg); }
+/* ==== list-mode selections & search highlights ==== */
+
+/* базовий чіп: має рамку, щоб можна було фарбувати стани */
+.dog-chip {
+  border: 1px solid transparent;
+  border-radius: 10px;
+  transition: box-shadow .15s ease, background-color .15s ease, border-color .15s ease;
+}
+
+/* вибраний у списковому режимі — зелений бейдж */
+.picked-dog {
+  background: rgba(16,185,129,.18) !important;   /* emerald-500 @ 18% */
+  border-color: #10b981 !important;              /* emerald-500 */
+  box-shadow: 0 0 0 2px rgba(16,185,129,.35) inset;
+}
+.picked-dog .dog-name {
+  color: #d1fae5;                                 /* emerald-100 */
+  text-shadow: 0 0 8px rgba(16,185,129,.55);
+}
+
+/* збіг пошуку — легке синє світіння, щоб відрізнялось */
+.spot-dog {
+  box-shadow: 0 0 0 2px rgba(59,130,246,.35) inset; /* blue-500 */
+}
+.spot-dog .dog-name {
+  text-decoration: underline dotted;
+}
+
+/* “худий” (sovany) лишаємо пріоритетним над іншими */
+.dog-chip-sovany {
+  outline: 2px solid #ef4444;
+  box-shadow: 0 0 0 2px #ef4444 inset !important;
+}
+
+
+@media print {
+  .print-table, .print-table th, .print-table td {
+    border: 2px solid #000 !important;
+  }
+  .print-table th, .print-table td {
+    padding: 6px 8px;
+  }
+}
+table, th, td {
+  border: 2px solid #000 !important; /* чорна і жирніша */
+  border-collapse: collapse;
+}
+
+th, td {
+  padding: 6px; /* трохи відступів, щоб текст не прилипав */
+}
+@media print {
+  table, th, td {
+    border: 2px solid #000 !important; /* жирна чорна сітка */
+    border-collapse: collapse !important;
+  }
+
+  th, td {
+    padding: 6px !important;
+  }
+}
+
+.dogs-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.dogs-horizontal {
+  flex-direction: row; /* як було */
+}
+
+.dogs-vertical {
+  flex-direction: column; /* тепер йде вниз */
+  align-items: flex-start; /* вирівняти по лівому краю */
+  max-height: 100%; /* не виходить за межі */
+  overflow-y: auto; /* скрол якщо багато */
+}
+
+
+
+
+/* --- Brand title (логотип текстом) --- */
+/* Шрифт з хорошою читабельністю; є fallback якщо CDN блокується */
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@700;800&display=swap');
+
+.brand-title{
+  font-family: "Manrope", ui-sans-serif, system-ui, -apple-system, "Segoe UI",
+               Roboto, "Helvetica Neue", Arial, "Noto Sans", "Liberation Sans", sans-serif;
+  font-weight: 800;
+  letter-spacing: .4px;
+
+  /* градієнт + «прозорий» текст */
+  background: linear-gradient(92deg, #c7d2fe 0%, #60a5fa 38%, #22d3ee 70%, #f472b6 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+
+  /* легке сяйво для темної теми */
+  text-shadow: 0 2px 8px rgba(59,130,246,.35);
+  transition: filter .25s ease, text-shadow .25s ease;
+}
+
+.brand-title:hover{
+  filter: brightness(1.08);
+  text-shadow: 0 4px 14px rgba(59,130,246,.55);
+}
+
+/* === Header watermark + glow for brand === */
+
+/* шлях до логотипа (svg/ png) */
+:root{
+  --brand-mark: url('/odc-logo.svg'); /* або '/odc-logo.png' */
+}
+
+/* напівпрозорий «водяний знак» в правому куті хедера */
+.header-hero{
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background: linear-gradient(180deg, rgba(2,6,23,.92), rgba(2,6,23,.86));
+  border-bottom: 1px solid #0f1a2b;
+}
+.header-hero::after{
+  content: "";
+  position: absolute;
+  right: 10px;
+  bottom: -14px;                  /* трохи «провалюємо» вниз, щоб не заважав */
+  width: 210px;
+  height: 210px;
+  background-image: var(--brand-mark);
+  background-repeat: no-repeat;
+  background-size: contain;
+  opacity: .08;                   /* дуже делікатно */
+  filter: drop-shadow(0 0 24px rgba(250,204,21,.25));
+  pointer-events: none;
+}
+
+/* мобілка — менший знак */
+@media (max-width: 640px){
+  .header-hero::after{
+    width: 120px;
+    height: 120px;
+    right: 6px;
+    bottom: -6px;
+    opacity: .10;
+  }
+}
+
+/* легке «світло» під назвою бренда */
+.brand-title{ position: relative; }
+.brand-title::before{
+  content: "";
+  position: absolute;
+  left: -6px;
+  right: -6px;
+  bottom: -6px;
+  height: 18px;
+  background: radial-gradient(60% 120% at 0% 100%, rgba(59,130,246,.28), transparent 65%);
+  filter: blur(12px);
+  z-index: -1;
+}
+
+
+
+
+
+
+/* --- Gold palette --- */
+:root{
+  --gold-1:#fff7d6;   /* світлий блік */
+  --gold-2:#fde68a;   /* amber-200 */
+  --gold-3:#fbbf24;   /* amber-400 */
+  --gold-4:#f59e0b;   /* amber-500 */
+  --gold-5:#b45309;   /* темна грань */
+}
+
+/* назва бренда: золото + м’яке світіння + легкий 3D */
+.brand-title{
+  font-family:"Manrope",ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,"Noto Sans",sans-serif;
+  font-weight:800; letter-spacing:.4px;
+  background: linear-gradient(92deg,var(--gold-2) 0%,var(--gold-3) 28%,var(--gold-4) 58%,var(--gold-2) 100%);
+  -webkit-background-clip:text; background-clip:text; color:transparent;
+
+  /* «об’єм»: нижня тінь + внутрішній глянець + glow */
+  text-shadow:
+    0 1px 0 rgba(0,0,0,.22),         /* тонка нижня грань */
+    0 2px 3px rgba(0,0,0,.35),       /* мікро-об’єм */
+    0 0 14px rgba(251,191,36,.40);   /* золоте сяйво */
+  transition: filter .25s ease, text-shadow .25s ease;
+}
+.brand-title:hover{
+  filter:brightness(1.06);
+  text-shadow:
+    0 1px 0 rgba(0,0,0,.22),
+    0 3px 6px rgba(0,0,0,.36),
+    0 0 18px rgba(251,191,36,.55);
+}
+
+/* золотий щит */
+.brand-shield{ color:var(--gold-3); filter: drop-shadow(0 0 6px rgba(251,191,36,.55)); }
+
+/* watermark у хедері — теж тепле золото */
+.header-hero::after{
+  /* решта властивостей залишаються як були у тебе */
+  filter: drop-shadow(0 0 24px rgba(251,191,36,.28));
+  opacity:.09; /* делікатніше на темному фоні */
+}
+
+/* підсвітка під назвою (аура) — тепла */
+.brand-title::before{
+  content:"";
+  position:absolute; left:-6px; right:-6px; bottom:-6px; height:18px;
+  background: radial-gradient(60% 120% at 0% 100%, rgba(251,191,36,.32), transparent 65%);
+  filter: blur(12px); z-index:-1;
+}
+.brand-title{
+  background-size: 200% 100%;
+  animation: none;
+}
+.brand-title:hover{
+  animation: sheen 1.6s ease forwards;
+}
+@keyframes sheen{
+  0%{ background-position: 0% 0%; }
+  100%{ background-position: 100% 0%; }
+}
