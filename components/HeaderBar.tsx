@@ -4,14 +4,15 @@
 import React from "react";
 
 type Props = {
-  title?: string;              // заголовок зліва (за замовч. "Olívia Dog Center")
-  role: string;                // текст ролі, напр. "SZUPERADMIN"
-  onRefresh(): void;           // клік по "Frissítés"
-  onOpenUsers(): void;         // клік по "Felhasználók" (навігацію робиш тут)
-  onLogout(): void;            // клік по "Kijelentkezés"
+  title?: string;                     // заголовок зліва
+  role?: string;                      // текст ролі (HU)
+  email?: string;                     // залишили опційно для сумісності
+  onRefresh?: () => void;             // клік по "Frissítés" (іконка показується, якщо є)
+  onOpenUsers?: () => void;           // клік по "Felhasználók" (іконка показується, якщо є)
+  onLogout: () => void | Promise<void>;
 };
 
-/* прості SVG-іконки */
+/** маленький SVG-набір без зовн. бібліотек */
 function Icon({
   name,
   className,
@@ -63,16 +64,17 @@ function Icon({
   }
 }
 
-/* кнопка-іконка */
+/** кнопка-іконка */
 function IconBtn({
   title,
   onClick,
   children,
 }: {
   title: string;
-  onClick(): void;
+  onClick?: () => void;
   children: React.ReactNode;
 }) {
+  if (!onClick) return null; // не показуємо, якщо хендлера немає
   return (
     <button
       type="button"
@@ -91,6 +93,7 @@ function IconBtn({
 export default function HeaderBar({
   title = "Olívia Dog Center",
   role,
+  // email залишили спеціально для сумісності, але не показуємо
   onRefresh,
   onOpenUsers,
   onLogout,
@@ -98,27 +101,32 @@ export default function HeaderBar({
   return (
     <header className="w-full sticky top-0 z-50 bg-slate-950/90 backdrop-blur border-b border-slate-800">
       <div className="mx-auto max-w-[1600px] px-3 py-2 flex items-center justify-between gap-2">
-        {/* Назва + роль */}
+        {/* Ліво: назва + роль (email прибрали) */}
         <div className="flex items-center gap-3 min-w-0">
-          <div className="brand-title text-xl sm:text-2xl truncate">{title}</div>
-          <div className="flex items-center text-yellow-400 text-sm">
-            <Icon name="shield" className="w-4 h-4 mr-1 brand-shield" />
-            <span className="hidden xs:inline">Szerep:&nbsp;</span>
-            <b className="tracking-wide">{role}</b>
+          <div
+            className="font-semibold text-slate-100 truncate
+                       [text-shadow:0_1px_0_rgba(0,0,0,.35),0_0_12px_rgba(234,179,8,.25)]"
+          >
+            {title}
           </div>
+
+          {role && (
+            <div className="flex items-center text-yellow-400 text-sm">
+              <Icon name="shield" className="w-4 h-4 mr-1" />
+              <span className="hidden xs:inline">Szerep:&nbsp;</span>
+              <b className="tracking-wide">{role}</b>
+            </div>
+          )}
         </div>
 
-        {/* Іконки дій */}
+        {/* Право: лише іконки, що мають хендлери */}
         <div className="flex items-center gap-2">
           <IconBtn title="Frissítés" onClick={onRefresh}>
             <Icon name="refresh" />
           </IconBtn>
-
-          {/* Адмін-панель: лише викликаємо твій handler */}
           <IconBtn title="Felhasználók" onClick={onOpenUsers}>
             <Icon name="users" />
           </IconBtn>
-
           <IconBtn title="Kijelentkezés" onClick={onLogout}>
             <Icon name="logout" />
           </IconBtn>
