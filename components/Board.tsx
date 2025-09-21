@@ -1,7 +1,7 @@
 // components/Board.tsx
 "use client";
 
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
 
 import { Dog, Kennel, isInactiveKennel } from "./board/types";
@@ -17,12 +17,12 @@ import DogDetailsModal, { DogDetails } from "./DogDetailsModal";
 import FilterListModal from "./FilterListModal";
 import PrintPreviewModal, { PrintDog } from "./PrintPreviewModal";
 
-/* ===================== helpers for reliable centering ===================== */
+/* ===================== helpers (плавне точне центрування) ===================== */
 
 function waitFor<T>(
   cond: () => T | null | undefined,
-  tries = 80,
-  delay = 25
+  tries = 60,
+  delay = 20
 ): Promise<T | null> {
   return new Promise((resolve) => {
     let left = tries;
@@ -47,15 +47,27 @@ async function waitReady(
   return ok && content ? true : false;
 }
 
-function centerChip(
-  root: HTMLElement,
-  chip: HTMLElement,
-  twRef: React.MutableRefObject<any>
-) {
+/** центр + стабільний масштаб (дефолт 1.25) + легка easeOut-анімація */
+function centerChipSmooth(opts: {
+  root: HTMLElement;
+  chip: HTMLElement;
+  twRef: React.MutableRefObject<any>;
+  targetScale?: number; // бажаний масштаб
+  biasY?: number; // зсув у відсотках висоти екрана (-0.1 = трохи вище центру)
+  duration?: number; // тривалість анімації, мс
+}) {
+  const {
+    root,
+    chip,
+    twRef,
+    targetScale = 1.25,
+    biasY = -0.1,
+    duration = 360,
+  } = opts;
   const content = root.querySelector("[data-board-content]") as HTMLElement | null;
   if (!content || !twRef.current) return;
 
-  // позиція чіпа відносно контенту
+  // позиція чіпа у координатах content
   let x = 0,
     y = 0;
   let cur: HTMLElement | null = chip;
@@ -67,27 +79,34 @@ function centerChip(
   const centerX = x + chip.offsetWidth / 2;
   const centerY = y + chip.offsetHeight / 2;
 
-  const state = twRef.current.getTransformState?.() || { scale: 1 };
-  let scale = state.scale ?? 1;
+  const scale = targetScale;
+  const tx = root.clientWidth / 2 - centerX * scale;
+  const ty =
+    root.clientHeight / 2 - centerY * scale + root.clientHeight * biasY;
 
-  // тримаємо ~100%: міняємо лише якщо дуже збито
-  if (scale < 0.9 || scale > 1.1) scale = 1;
-
-  // зсув ВГОРУ на 30% висоти екрана
-  const verticalBias = -root.clientHeight * 0.3;
-
-  const nextX = root.clientWidth / 2 - centerX * scale;
-  const nextY = root.clientHeight / 2 - centerY * scale + verticalBias;
-
-  twRef.current.setTransform(nextX, nextY, scale, 0);
+  try {
+    // останні версії бібліотеки підтримують easing як 5-й аргумент
+    twRef.current.setTransform(tx, ty, scale, duration, "easeOut");
+  } catch {
+    twRef.current.setTransform(tx, ty, scale, duration);
+  }
 }
 
 /* ======================================================================== */
 
 export default function Board() {
   // data
-  const { kennels, dogs, setDogs, loading, error, setError, load, dogsByCage, tryMoveDog } =
-    useBoardData();
+  const {
+    kennels,
+    dogs,
+    setDogs,
+    loading,
+    error,
+    setError,
+    load,
+    dogsByCage,
+    tryMoveDog,
+  } = useBoardData();
 
   // ui state
   const [editMode, setEditMode] = useState(false);
@@ -137,49 +156,78 @@ export default function Board() {
   // search
   const { query, setQuery, q, matchDogIds, cagesWithMatches } = useSearch(dogs);
 
-  /* ======= автофокус/автопозиціювання на першому результаті пошуку ======= */
-  useEffect(() => {
-    if (!q || matchDogIds.size === 0) return;
+  // список збігів (стабільний порядок)
+  const matchList = useMemo(() => Array.from(matchDogIds), [matchDogIds]);
+  const [matchIdx, setMatchIdx] = useState(0);
 
-    let cancelled = false;
-    (async () => {
-      const firstId = Array.from(matchDogIds)[0];
+  // фокус на конкретний збіг (без дерганини)
+  const focusMatch = useCallback(
+    async (idx: number) => {
       const root = containerRef.current!;
       if (!root) return;
 
-      // 1) чекаємо готовність TransformWrapper та контенту
+      const id = matchList[idx];
+      if (!id) return;
+
       const ready = await waitReady(twRef, root);
-      if (!ready || cancelled) return;
+      if (!ready) return;
 
-      // 2) чекаємо появу DOM-ноди чіпа
-      const chip = await waitFor(() =>
-        root.querySelector<HTMLElement>(`.dog-chip[data-id="${firstId}"]`) ||
-        root.querySelector<HTMLElement>(`[data-chip-id="${firstId}"]`)
+      const chip = await waitFor(
+        () =>
+          root.querySelector<HTMLElement>(`.dog-chip[data-id="${id}"]`) ||
+          root.querySelector<HTMLElement>(`[data-chip-id="${id}"]`)
       );
-      if (!chip || cancelled) return;
+      if (!chip) return;
 
+      // одна акуратна анімація з фіксованим масштабом
+      centerChipSmooth({
+        root,
+        chip,
+        twRef,
+        targetScale: 1.25,
+        biasY: -0.1,
+        duration: 360,
+      });
+
+      // легкий пульс — візуальне підкріплення
       try {
-        const currentScale = twRef.current.getTransformState?.().scale ?? 1;
-        const minScale = currentScale < 0.9 || currentScale > 1.1 ? 1 : currentScale;
+        chip.animate(
+          [
+            { transform: "scale(1)" },
+            { transform: "scale(1.06)" },
+            { transform: "scale(1)" },
+          ],
+          { duration: 260, easing: "ease-out" }
+        );
+      } catch {}
+    },
+    [containerRef, matchList]
+  );
 
-        if (typeof twRef.current.zoomToElement === "function") {
-          twRef.current.zoomToElement(chip, minScale, 250);
-          // після анімації — точне позиціювання із зсувом угору
-          setTimeout(() => !cancelled && centerChip(root, chip, twRef), 270);
-        } else {
-          // fallback: одразу центр
-          centerChip(root, chip, twRef);
-        }
-      } catch {
-        // no-op
-      }
-    })();
+  // коли змінився запит — стрибаємо на перший збіг
+  useEffect(() => {
+    if (!q || matchList.length === 0) return;
+    setMatchIdx(0);
+    const t = setTimeout(() => focusMatch(0), 40);
+    return () => clearTimeout(t);
+  }, [q, matchList.length, focusMatch]);
 
-    return () => {
-      cancelled = true;
-    };
-  }, [q, matchDogIds]);
-  /* ====================================================================== */
+  const goPrev = () => {
+    if (!matchList.length) return;
+    const next = (matchIdx - 1 + matchList.length) % matchList.length;
+    setMatchIdx(next);
+    focusMatch(next);
+  };
+  const goNext = () => {
+    if (!matchList.length) return;
+    const next = (matchIdx + 1) % matchList.length;
+    setMatchIdx(next);
+    focusMatch(next);
+  };
+  const clearSearch = () => {
+    setQuery("");
+    setMatchIdx(0);
+  };
 
   // список для друку — виключаємо собак із «неактивних» вольєрів
   const pickedDogs: PrintDog[] = useMemo(() => {
@@ -285,6 +333,7 @@ export default function Board() {
     setQuery("");
     setSelectedDogId(null);
     setHoverCage(null);
+    setMatchIdx(0);
   };
   const toggleMode = () => {
     setEditMode((v) => !v);
@@ -299,8 +348,13 @@ export default function Board() {
         zoomIn={() => twRef.current?.zoomIn(0.2, 200)}
         fit={() => twRef.current?.setTransform(0, 0, computeFit(), 200)}
         reset100={() => twRef.current?.setTransform(0, 0, 1, 200)}
+        /* === ПОШУК: текст, лічильник, навігація, clear === */
         query={query}
         setQuery={setQuery}
+        matchCount={matchList.length}
+        onSearchPrev={goPrev}
+        onSearchNext={goNext}
+        onSearchClear={clearSearch}
         editMode={editMode}
         toggleMode={toggleMode}
         resetSelection={resetSelection}
@@ -332,26 +386,31 @@ export default function Board() {
           }}
         >
           <TransformWrapper
-  ref={twRef}
-  minScale={0.3}
-  maxScale={3}
-  initialScale={computeFit()}
-  centerOnInit
-  limitToBounds={false}
-  // можна лишити, навіть якщо версія без excluded — нічого не зламає
-  wheel={{ step: 0.1, disabled: false, wheelDisabled: false, touchPadDisabled: false, excluded: ["kennel-scroll"] }}
-  pinch={{ disabled: false, excluded: ["kennel-scroll"] }}
-  panning={{ disabled: !!dragDogId, velocityDisabled: true, excluded: ["kennel-scroll"] }}
-  doubleClick={{ disabled: true }}
-  
->
-  <TransformComponent
-       // 👇 це ВАЖЛИВО для пану/зуму на мобільних
-    wrapperStyle={{ touchAction: "none" as any }}
-    contentStyle={{ touchAction: "none" as any }}
-   
-    
-    
+            ref={twRef}
+            minScale={0.3}
+            maxScale={3}
+            initialScale={computeFit()}
+            centerOnInit
+            limitToBounds={false}
+            wheel={{
+              step: 0.1,
+              disabled: false,
+              wheelDisabled: false,
+              touchPadDisabled: false,
+              excluded: ["kennel-scroll"],
+            }}
+            pinch={{ disabled: false, excluded: ["kennel-scroll"] }}
+            panning={{
+              disabled: !!dragDogId,
+              velocityDisabled: true,
+              excluded: ["kennel-scroll"],
+            }}
+            doubleClick={{ disabled: true }}
+          >
+            <TransformComponent
+              // 👇 важливо для пану/зуму на мобільних
+              wrapperStyle={{ touchAction: "none" as any }}
+              contentStyle={{ touchAction: "none" as any }}
             >
               <div
                 data-board-content
@@ -423,7 +482,9 @@ export default function Board() {
       <AddDogModal
         open={addOpen}
         onClose={() => setAddOpen(false)}
-        onCreated={(d: DogRecord) => setDogs((prev) => [d as any as Dog, ...prev])}
+        onCreated={(d: DogRecord) =>
+          setDogs((prev) => [d as any as Dog, ...prev])
+        }
       />
       <DogDetailsModal
         open={detailsOpen}

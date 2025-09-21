@@ -5,26 +5,34 @@ import React from "react";
 import { useRole } from "@/components/auth/RoleProvider";
 import { canEdit } from "@/lib/roles";
 
-/* ==================== Легкі SVG-іконки (без бібліотек) ==================== */
+/* ---------- lightweight SVG icons ---------- */
 function Icon({
   name,
   className,
 }: {
-  name: "edit" | "plus" | "filter" | "print" | "clear";
+  name:
+    | "edit"
+    | "plus"
+    | "filter"
+    | "print"
+    | "clear"
+    | "chevLeft"
+    | "chevRight"
+    | "search";
   className?: string;
 }) {
   const common = {
-    width: 22,
-    height: 22,
+    width: 18,
+    height: 18,
     viewBox: "0 0 24 24",
     stroke: "currentColor",
     fill: "none",
-    strokeWidth: 1.8,
+    strokeWidth: 2,
     strokeLinecap: "round" as const,
     strokeLinejoin: "round" as const,
-    className,
+    className: ["pointer-events-none", className].filter(Boolean).join(" "),
+    "aria-hidden": true as any,
   };
-
   switch (name) {
     case "edit":
       return (
@@ -60,10 +68,29 @@ function Icon({
           <path d="M6 6l12 12M18 6L6 18" />
         </svg>
       );
+    case "chevLeft":
+      return (
+        <svg {...common}>
+          <path d="M15 18l-6-6 6-6" />
+        </svg>
+      );
+    case "chevRight":
+      return (
+        <svg {...common}>
+          <path d="M9 18l6-6-6-6" />
+        </svg>
+      );
+    case "search":
+      return (
+        <svg {...common}>
+          <circle cx="11" cy="11" r="7" />
+          <path d="M21 21l-4.3-4.3" />
+        </svg>
+      );
   }
 }
 
-/* UA: кнопка-іконка з однаковими розмірами і станами */
+/* ---------- square icon button (right group) ---------- */
 function IconBtn({
   title,
   onClick,
@@ -85,15 +112,13 @@ function IconBtn({
       onClick={onClick}
       disabled={disabled}
       className={[
-        "inline-flex items-center justify-center",
-        "w-[52px] h-[44px] rounded-2xl",
+        "inline-flex items-center justify-center w-[52px] h-[44px] rounded-2xl",
         "border transition",
-        // базова «плитка»
         "bg-slate-800/70 border-slate-700 text-slate-200",
         "hover:bg-slate-700 hover:border-slate-600",
-        // активний (для Szerkesztés у ввімкненому стані)
-        active ? "bg-red-600 text-white border-red-500 hover:bg-red-500" : "",
-        // disabled
+        active
+          ? "bg-red-600 text-white border-red-500 hover:bg-red-500 shadow-[0_8px_18px_rgba(239,68,68,.28)] ring-1 ring-red-400/50"
+          : "",
         disabled ? "opacity-40 cursor-not-allowed hover:bg-slate-800/70" : "",
       ].join(" ")}
     >
@@ -103,14 +128,18 @@ function IconBtn({
 }
 
 type Props = {
-  // лишаємо в сигнатурі, але не показуємо в UI (ти просив прибрати ці кнопки)
   zoomOut(): void;
   zoomIn(): void;
   fit(): void;
   reset100(): void;
 
+  // пошук
   query: string;
   setQuery(q: string): void;
+  matchCount: number;
+  onSearchPrev(): void;
+  onSearchNext(): void;
+  onSearchClear(): void;
 
   editMode: boolean;
   toggleMode(): void;
@@ -132,6 +161,10 @@ export default function BoardToolbar({
   reset100,
   query,
   setQuery,
+  matchCount,
+  onSearchPrev,
+  onSearchNext,
+  onSearchClear,
   editMode,
   toggleMode,
   resetSelection,
@@ -144,27 +177,87 @@ export default function BoardToolbar({
   const { role, loading } = useRole();
   const mayEdit = !loading && canEdit(role);
 
+  const hasQuery = query.trim().length > 0;
+  const hasMatches = hasQuery && matchCount > 0;
+
   return (
     <div className="board-toolbar-wrap">
       <div className="board-toolbar w-full items-center">
-        {/* Пошук */}
-        <div className="flex items-center gap-2 min-w-[220px]">
-          <input
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Keresés név / chip…"
-            className="border rounded-xl px-3 py-2 bg-[#0b1220] border-slate-700 text-slate-100 w-[260px] max-w-[60vw]"
-          />
-          {query && (
-            <IconBtn title="Törlés" onClick={() => setQuery("")}>
-              <Icon name="clear" />
-            </IconBtn>
-          )}
+        {/* SEARCH */}
+        <div className="flex items-center gap-2 min-w-[260px]">
+          <div className="relative flex items-center">
+            <span className="pointer-events-none absolute left-3 text-slate-400">
+              <Icon name="search" />
+            </span>
+
+            <input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Keresés név / chip…"
+              className="pl-10 pr-[132px] py-2
+                         w-[340px] sm:w-[400px] max-w-[78vw]
+                         rounded-xl border bg-[#0b1220] border-slate-700 text-slate-100
+                         focus:outline-none focus:ring-2 focus:ring-amber-400/30"
+            />
+
+            {/* right-side controls (match count + prev/next + clear) */}
+            <div
+              className="absolute right-2 inset-y-0 flex items-center gap-1"
+              style={{ pointerEvents: "auto" }}
+            >
+              {hasMatches && (
+                <span
+                  className="px-2 py-[2px] text-[11px] rounded-full border
+                             bg-emerald-600/25 border-emerald-500/60 text-emerald-100 select-none"
+                  title="Találatok száma"
+                >
+                  {matchCount}
+                </span>
+              )}
+
+              {hasMatches && (
+                <>
+                  <button
+                    type="button"
+                    onClick={onSearchPrev}
+                    title="Előző találat"
+                    className="search-ctrl w-8 h-8 inline-flex items-center justify-center rounded-xl border
+                               !bg-slate-700/40 !border-slate-600 !text-slate-200
+                               hover:!bg-slate-600/70 transition"
+                  >
+                    <Icon name="chevLeft" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={onSearchNext}
+                    title="Következő találat"
+                    className="search-ctrl w-8 h-8 inline-flex items-center justify-center rounded-xl border
+                               !bg-slate-700/40 !border-slate-600 !text-slate-200
+                               hover:!bg-slate-600/70 transition"
+                  >
+                    <Icon name="chevRight" />
+                  </button>
+                </>
+              )}
+
+              {hasQuery && (
+                <button
+                  type="button"
+                  onClick={onSearchClear}
+                  title="Törlés"
+                  className="search-ctrl w-8 h-8 inline-flex items-center justify-center rounded-xl border
+                             !bg-slate-700/40 !border-slate-600 !text-slate-200
+                             hover:!bg-slate-600/70 transition"
+                >
+                  <Icon name="clear" />
+                </button>
+              )}
+            </div>
+          </div>
         </div>
 
-        {/* Правий блок кнопок */}
+        {/* RIGHT GROUP */}
         <div className="flex items-center gap-3 ml-auto">
-          {/* Перемикач режиму: редактор (іконка олівця) */}
           <IconBtn
             title={
               mayEdit
@@ -180,7 +273,6 @@ export default function BoardToolbar({
             <Icon name="edit" />
           </IconBtn>
 
-          {/* Кнопка «+ Új kutya» — теж тільки для editor/admin/szuperadmin */}
           <IconBtn
             title={mayEdit ? "Új kutya" : "Nincs jogosultság új kutyát hozzáadni"}
             onClick={() => mayEdit && openAdd()}
@@ -189,7 +281,6 @@ export default function BoardToolbar({
             <Icon name="plus" />
           </IconBtn>
 
-          {/* Фільтри (доступні завжди, але логічні лише коли не редагуємо) */}
           <IconBtn
             title="Szűrők"
             onClick={() => !editMode && openFilters()}
@@ -198,7 +289,6 @@ export default function BoardToolbar({
             <Icon name="filter" />
           </IconBtn>
 
-          {/* Друк: активний, якщо є вибрані */}
           <div className="relative">
             <IconBtn
               title={pickedCount > 0 ? "Nyomtatás" : "Nincs kijelölt elem"}
@@ -208,21 +298,16 @@ export default function BoardToolbar({
               <Icon name="print" />
             </IconBtn>
             {pickedCount > 0 && (
-              <span
-                className="absolute -top-1 -right-1 text-[10px] leading-none
-                           bg-emerald-600 text-white rounded-full px-[6px] py-[2px]"
-              >
+              <span className="absolute -top-1 -right-1 text-[10px] leading-none bg-emerald-600 text-white rounded-full px-[6px] py-[2px]">
                 {pickedCount}
               </span>
             )}
           </div>
 
-          {/* Очистити вибір (працює в обох режимах) */}
           <IconBtn title="Kijelölés törlése" onClick={resetSelection}>
             <Icon name="clear" />
           </IconBtn>
 
-          {/* Індикатор збереження */}
           {saving && (
             <span className="text-sm text-slate-300 select-none">Mentés…</span>
           )}

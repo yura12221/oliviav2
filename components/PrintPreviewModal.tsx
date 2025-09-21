@@ -75,6 +75,7 @@ export default function PrintPreviewModal({
 
   // ===== Константи вимірювання (у pt — пункти, як у jsPDF) =====
   const INDEX_W_PT = 28;     // колонка "#"
+  const DELETE_COL_W_PT = 46; // ширина колонки з ✕
   const FONT_SIZE_PT = 10;   // кегль таблиці
   const PADDING_PT = 6;      // горизонтальний паддінг клітини
   const MIN_CELL_W_PT = 26;  // технічний мінімум ширини
@@ -98,7 +99,6 @@ export default function PrintPreviewModal({
 
   // ===== ЄДИНИЙ розрахунок ширин для PDF і для браузерного друку =====
   const widthsPt: Record<ColKey, number> = useMemo(() => {
-    // Використаємо jsPDF для точного вимірювання в pt і потім застосуємо і в DOM
     const doc = new jsPDF({ unit: "pt", format: "a4" });
     const pageWidthPt = doc.internal.pageSize.getWidth();
     const availForColsPt = (pageWidthPt - MARGIN_L_PT - MARGIN_R_PT) - INDEX_W_PT;
@@ -113,7 +113,6 @@ export default function PrintPreviewModal({
       return max;
     };
 
-    // базові ширини: max(жирна шапка, усі клітини тіла) + паддінги
     const bases = cols.map((c) => {
       doc.setFont("helvetica", "bold");
       doc.setFontSize(FONT_SIZE_PT);
@@ -134,7 +133,6 @@ export default function PrintPreviewModal({
     const visibleExtraKeys = cols.map(c => c.key).filter(isExtra);
     let sumPt = bases.reduce((s, b) => s + b.base, 0);
 
-    // Роздати увесь залишок тільки між Megj.*
     if (sumPt < availForColsPt && visibleExtraKeys.length > 0) {
       const leftover = availForColsPt - sumPt;
       const add = leftover / visibleExtraKeys.length;
@@ -142,7 +140,6 @@ export default function PrintPreviewModal({
       sumPt = availForColsPt;
     }
 
-    // Якщо не влазить: спершу стискаємо лише Megj.*, потім — усі (мінімум — MIN_CELL_W_PT)
     if (sumPt > availForColsPt) {
       let need = sumPt - availForColsPt;
 
@@ -190,7 +187,6 @@ export default function PrintPreviewModal({
       ...cols.map((c) => cellText(d, c.key)),
     ]);
 
-    // columnStyles: 0 — це "#", далі — видимі колонки
     const columnStyles: Record<number, any> = {
       0: { cellWidth: INDEX_W_PT, halign: "center" },
     };
@@ -204,7 +200,7 @@ export default function PrintPreviewModal({
       body,
       startY: 60,
       margin: { left: MARGIN_L_PT, right: MARGIN_R_PT },
-      tableWidth: "wrap", // НЕ масштабуємо всю таблицю — поважаємо наші cellWidth
+      tableWidth: "wrap",
       styles: {
         fontSize: FONT_SIZE_PT,
         cellPadding: PADDING_PT,
@@ -234,7 +230,7 @@ export default function PrintPreviewModal({
       <div className="modal print-modal" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header flex items-center justify-between">
           <h3>Nyomtatási előnézet (A4)</h3>
-          <div className="flex gap-2">
+        <div className="flex gap-2">
             <button className="board-btn" onClick={downloadPDF}>📄 PDF letöltése</button>
             <button className="board-btn" onClick={() => window.print()}>🖨️ Nyomtatás</button>
             <button className="board-btn-ghost" onClick={onClose}>Bezár</button>
@@ -296,26 +292,29 @@ export default function PrintPreviewModal({
             </div>
 
             <div className="print-a4">
-              {/* ВАЖЛИВО: colgroup з тими ж ширинами, що й PDF */}
+              {/* ✕ колонка ПЕРЕД № */}
               <table className="print-table" style={{ tableLayout: "fixed" }}>
                 <colgroup>
-                  <col style={{ width: `${INDEX_W_PT}pt` }} />
+                  <col className="no-print" style={{ width: `${DELETE_COL_W_PT}pt` }} /> {/* ✕ */}
+                  <col style={{ width: `${INDEX_W_PT}pt` }} />                              {/* № */}
                   {cols.map((c) => (
                     <col key={c.key} style={{ width: `${(widthsPt[c.key] ?? 80)}pt` }} />
                   ))}
-                  <col className="no-print" /> {/* кнопка видалення — не друкується */}
                 </colgroup>
 
                 <thead>
                   <tr>
+                    <th className="no-print">×</th>
                     <th>№</th>
                     {cols.map((c) => <th key={c.key}>{c.label}</th>)}
-                    <th className="no-print">×</th>
                   </tr>
                 </thead>
                 <tbody>
                   {dogs.map((d, i) => (
                     <tr key={d.id}>
+                      <td className="no-print">
+                        <button className="board-btn-ghost" onClick={() => onRemove(d.id)}>✕</button>
+                      </td>
                       <td>{i + 1}</td>
                       {cols.map((c) => {
                         let v: React.ReactNode = "";
@@ -327,9 +326,6 @@ export default function PrintPreviewModal({
                         else if (c.key === "info") v = d.info || "—";
                         return <td key={c.key}>{v}</td>;
                       })}
-                      <td className="no-print">
-                        <button className="board-btn-ghost" onClick={() => onRemove(d.id)}>✕</button>
-                      </td>
                     </tr>
                   ))}
                 </tbody>

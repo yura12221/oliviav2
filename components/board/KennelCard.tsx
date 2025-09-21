@@ -52,7 +52,7 @@ export default function KennelCard({
 
               // 🟦 головне: кладемо елементи ВНИЗ, потім у наступну колонку
               gridAutoFlow: "column",
-              gridTemplateRows: `repeat(11, ${ROW_H_CS}px)`, // 11 рядків у колонці
+              gridTemplateRows: `repeat(10, ${ROW_H_CS}px)`, // 11 рядків у колонці
               gridAutoColumns: "max-content",                 // ширина колонок по вмісту
 
               justifyContent: "start",

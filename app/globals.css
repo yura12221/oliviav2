@@ -293,151 +293,68 @@ th, td {
   overflow-y: auto; /* скрол якщо багато */
 }
 
+/* === PATCH: header restyle === */
+/* === Header restyle === */
+.hdr{
+  position:sticky; top:0; z-index:50;
+  display:flex; align-items:center; gap:12px;
+  padding:10px 12px;
+  background: var(--bg);
+  border-bottom:1px solid var(--border);
+}
+.hdr__left{ display:flex; align-items:baseline; gap:10px; }
+.hdr__spacer{ flex:1; }
+.hdr__right{ display:flex; align-items:center; gap:8px; }
 
-
-
-/* --- Brand title (логотип текстом) --- */
-/* Шрифт з хорошою читабельністю; є fallback якщо CDN блокується */
-@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@700;800&display=swap');
-
+/* Brand: золотий градієнт + легкий 3D ефект */
 .brand-title{
-  font-family: "Manrope", ui-sans-serif, system-ui, -apple-system, "Segoe UI",
-               Roboto, "Helvetica Neue", Arial, "Noto Sans", "Liberation Sans", sans-serif;
   font-weight: 800;
-  letter-spacing: .4px;
-
-  /* градієнт + «прозорий» текст */
-  background: linear-gradient(92deg, #c7d2fe 0%, #60a5fa 38%, #22d3ee 70%, #f472b6 100%);
+  letter-spacing: .3px;
+  text-decoration: none;
+  line-height: 1;
+  background: linear-gradient(180deg, #F9E8A5 0%, #E2B742 55%, #AA7E16 100%);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
-
-  /* легке сяйво для темної теми */
-  text-shadow: 0 2px 8px rgba(59,130,246,.35);
-  transition: filter .25s ease, text-shadow .25s ease;
+  /* 3D-ish shadow */
+  text-shadow: 0 1px 0 rgba(0,0,0,.35), 0 2px 6px rgba(0,0,0,.35);
 }
+/* Якщо буде бажання — підключіть красивий шрифт у layout (наприклад, Cinzel) */
 
-.brand-title:hover{
-  filter: brightness(1.08);
-  text-shadow: 0 4px 14px rgba(59,130,246,.55);
+/* Іконки-кнопки */
+.icon-btn{
+  display:inline-flex; align-items:center; justify-content:center;
+  width:40px; height:40px;
+  border-radius:12px;
+  background: var(--surface);
+  border:1px solid var(--border);
+  box-shadow: var(--shadow-sm, 0 1px 2px rgba(16,24,40,.06));
+  transition: transform var(--duration,150ms) var(--easing,cubic-bezier(.2,.6,.2,1)),
+              box-shadow var(--duration,150ms) var(--easing,cubic-bezier(.2,.6,.2,1)),
+              background var(--duration,150ms);
 }
+.icon-btn:hover{ box-shadow: var(--shadow-md, 0 4px 10px rgba(16,24,40,.08)); }
+.icon-btn:active{ transform: translateY(1px); }
+.icon-btn .icon{ width:20px; height:20px; color: #e5edf7; opacity:.95; }
 
-/* === Header watermark + glow for brand === */
-
-/* шлях до логотипа (svg/ png) */
-:root{
-  --brand-mark: url('/odc-logo.svg'); /* або '/odc-logo.png' */
+/* Role pill */
+.role-badge{
+  font-size: 12px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(245, 158, 11, .15);
+  border: 1px solid rgba(245, 158, 11, .35);
+  color: #FBD38D;
 }
-
-/* напівпрозорий «водяний знак» в правому куті хедера */
-.header-hero{
-  position: sticky;
-  top: 0;
-  z-index: 50;
-  background: linear-gradient(180deg, rgba(2,6,23,.92), rgba(2,6,23,.86));
-  border-bottom: 1px solid #0f1a2b;
+/* Board toolbar — search controls: force-neutralize global button styles */
+.search-ctrl {
+  background: rgba(100,116,139,.35) !important;  /* slate-600/40 */
+  border: 1px solid #475569 !important;         /* slate-600 */
+  color: #e5e7eb !important;                    /* slate-200 (іконки видно) */
+  padding: 0 !important;
 }
-.header-hero::after{
-  content: "";
-  position: absolute;
-  right: 10px;
-  bottom: -14px;                  /* трохи «провалюємо» вниз, щоб не заважав */
-  width: 210px;
-  height: 210px;
-  background-image: var(--brand-mark);
-  background-repeat: no-repeat;
-  background-size: contain;
-  opacity: .08;                   /* дуже делікатно */
-  filter: drop-shadow(0 0 24px rgba(250,204,21,.25));
-  pointer-events: none;
-}
-
-/* мобілка — менший знак */
-@media (max-width: 640px){
-  .header-hero::after{
-    width: 120px;
-    height: 120px;
-    right: 6px;
-    bottom: -6px;
-    opacity: .10;
-  }
-}
-
-/* легке «світло» під назвою бренда */
-.brand-title{ position: relative; }
-.brand-title::before{
-  content: "";
-  position: absolute;
-  left: -6px;
-  right: -6px;
-  bottom: -6px;
+.search-ctrl svg {
+  width: 18px;
   height: 18px;
-  background: radial-gradient(60% 120% at 0% 100%, rgba(59,130,246,.28), transparent 65%);
-  filter: blur(12px);
-  z-index: -1;
-}
-
-
-
-
-
-
-/* --- Gold palette --- */
-:root{
-  --gold-1:#fff7d6;   /* світлий блік */
-  --gold-2:#fde68a;   /* amber-200 */
-  --gold-3:#fbbf24;   /* amber-400 */
-  --gold-4:#f59e0b;   /* amber-500 */
-  --gold-5:#b45309;   /* темна грань */
-}
-
-/* назва бренда: золото + м’яке світіння + легкий 3D */
-.brand-title{
-  font-family:"Manrope",ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,"Noto Sans",sans-serif;
-  font-weight:800; letter-spacing:.4px;
-  background: linear-gradient(92deg,var(--gold-2) 0%,var(--gold-3) 28%,var(--gold-4) 58%,var(--gold-2) 100%);
-  -webkit-background-clip:text; background-clip:text; color:transparent;
-
-  /* «об’єм»: нижня тінь + внутрішній глянець + glow */
-  text-shadow:
-    0 1px 0 rgba(0,0,0,.22),         /* тонка нижня грань */
-    0 2px 3px rgba(0,0,0,.35),       /* мікро-об’єм */
-    0 0 14px rgba(251,191,36,.40);   /* золоте сяйво */
-  transition: filter .25s ease, text-shadow .25s ease;
-}
-.brand-title:hover{
-  filter:brightness(1.06);
-  text-shadow:
-    0 1px 0 rgba(0,0,0,.22),
-    0 3px 6px rgba(0,0,0,.36),
-    0 0 18px rgba(251,191,36,.55);
-}
-
-/* золотий щит */
-.brand-shield{ color:var(--gold-3); filter: drop-shadow(0 0 6px rgba(251,191,36,.55)); }
-
-/* watermark у хедері — теж тепле золото */
-.header-hero::after{
-  /* решта властивостей залишаються як були у тебе */
-  filter: drop-shadow(0 0 24px rgba(251,191,36,.28));
-  opacity:.09; /* делікатніше на темному фоні */
-}
-
-/* підсвітка під назвою (аура) — тепла */
-.brand-title::before{
-  content:"";
-  position:absolute; left:-6px; right:-6px; bottom:-6px; height:18px;
-  background: radial-gradient(60% 120% at 0% 100%, rgba(251,191,36,.32), transparent 65%);
-  filter: blur(12px); z-index:-1;
-}
-.brand-title{
-  background-size: 200% 100%;
-  animation: none;
-}
-.brand-title:hover{
-  animation: sheen 1.6s ease forwards;
-}
-@keyframes sheen{
-  0%{ background-position: 0% 0%; }
-  100%{ background-position: 100% 0%; }
+  stroke: currentColor;
 }
